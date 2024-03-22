@@ -25,28 +25,31 @@ namespace BrawlStreamStatsHelper.TableGeneration
         private readonly string _filePath;
         private string _tableFolder = string.Empty;
 
+        /// <summary>
+        /// Initialise table gen
+        /// </summary>
+        /// <param name="gameData"></param>
+        /// <param name="filePath"></param>
+        /// <param name="config"></param>
+        /// <exception cref="Exception"></exception>
         public TableGenerator(GameData gameData, string filePath, Config config)
         {
             _gameData = gameData;
             _filePath = filePath;
             _config = config;
 
-
-
             if (_config == null)
             {
                 throw new Exception("_config file could not be read!");
             }
-
         }
 
+        /// <summary>
+        /// Generates tables and saves them
+        /// </summary>
         public void Generate()
         {
-            if (_config == null)
-            {
-                return;
-            }
-
+            // Clear old tables
             _tableFolder = Path.Combine(_filePath, "Tables");
             if (Directory.Exists(_tableFolder))
             {
@@ -55,6 +58,8 @@ namespace BrawlStreamStatsHelper.TableGeneration
 
             Directory.CreateDirectory(_tableFolder);
             var teams = new Dictionary<string, List<Player>>();
+
+            // Sort teams
             if (!_config.SortTablesByTeam)
             {
                 teams.Add("No Team", new List<Player>());
@@ -74,7 +79,7 @@ namespace BrawlStreamStatsHelper.TableGeneration
             }
 
 
-
+            // Generate Charts and Save
             foreach (var table in _config.Charts)
             {
                 try
@@ -110,6 +115,7 @@ namespace BrawlStreamStatsHelper.TableGeneration
 
                     }
 
+                    // Save the table out
                     OutputTable(table, chartData);
                 }
                 catch(Exception ex)
@@ -123,6 +129,11 @@ namespace BrawlStreamStatsHelper.TableGeneration
             }
         }
 
+        /// <summary>
+        /// Performs logic to save the table out in requested formats
+        /// </summary>
+        /// <param name="table"></param>
+        /// <param name="chartData"></param>
         private void OutputTable(Table table, Dictionary<string, List<Dictionary<string, string>>> chartData)
         {
             foreach (var (teamName, list) in chartData)
@@ -165,6 +176,12 @@ namespace BrawlStreamStatsHelper.TableGeneration
             }
         }
 
+        /// <summary>
+        /// Generates a transparent png for a table
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="outputPath"></param>
+        /// <param name="table"></param>
         private void CreateTransparentPngWithText(string text, string outputPath, Table table)
         {
             Font font;
@@ -258,7 +275,11 @@ namespace BrawlStreamStatsHelper.TableGeneration
         }
 
 
-
+        /// <summary>
+        /// Expands the data structure so that it can be transposed and drawn as a table easily
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         private static List<List<string>> ExpandData(List<List<string>> data)
         {
             var expandedData = new List<List<string>>();
@@ -266,7 +287,6 @@ namespace BrawlStreamStatsHelper.TableGeneration
             {
                 var tempRows = new List<List<string>>();
                 var maxSplits = row.Select(cell => cell.Split(new string[] { "//" }, StringSplitOptions.None)).Select(splits => splits.Length).Prepend(0).Max();
-
 
                 // Initialize temporary rows to hold the split data
                 for (var i = 0; i < maxSplits; i++)
@@ -305,7 +325,11 @@ namespace BrawlStreamStatsHelper.TableGeneration
             return expandedData;
         }
 
-
+        /// <summary>
+        /// swaps rows and column directions
+        /// </summary>
+        /// <param name="teamData"></param>
+        /// <returns></returns>
         private static List<List<string>> TransposeTeamData(List<List<string>> teamData)
         {
             var transposedData = new List<List<string>>();
@@ -321,7 +345,13 @@ namespace BrawlStreamStatsHelper.TableGeneration
             return transposedData;
         }
 
-
+        /// <summary>
+        /// Builds the table to be converted into an image as text
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="table"></param>
+        /// <param name="isCsv"></param>
+        /// <returns></returns>
         private static string BuildOutputText(List<List<string>> data, Table table, bool isCsv)
         {
             var outputText = new StringBuilder();
@@ -362,7 +392,13 @@ namespace BrawlStreamStatsHelper.TableGeneration
         }
 
 
-
+        /// <summary>
+        /// Retrieves the stat from the stat data for a given player data
+        /// </summary>
+        /// <param name="statName"></param>
+        /// <param name="player"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         private static string FetchStat(string statName, Player player)
         {
             foreach (var property in typeof(Player).GetProperties())
@@ -408,6 +444,12 @@ namespace BrawlStreamStatsHelper.TableGeneration
             throw new Exception("Unable to find stat " + statName);
         }
 
+        /// <summary>
+        /// Checks of a stat can be displayed
+        /// </summary>
+        /// <param name="statName"></param>
+        /// <param name="property"></param>
+        /// <returns></returns>
         private static bool CheckProperty(string statName, PropertyInfo property)
         {
             if (property.PropertyType != typeof(int) &&

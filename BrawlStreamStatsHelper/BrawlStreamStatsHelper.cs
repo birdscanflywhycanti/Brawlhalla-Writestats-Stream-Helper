@@ -122,6 +122,7 @@ namespace BrawlStreamStatsHelper
             }
         }
 
+
         private static void WriteConfigToFile(string filePath)
         {
             var directoryPath = Path.GetDirectoryName(filePath);
@@ -171,12 +172,12 @@ namespace BrawlStreamStatsHelper
         }
 
 
-    /// <summary>
-    /// Parses the json file into a class containing the game data
-    /// </summary>
-    /// <param name="filePath"></param>
-    /// <returns></returns>
-    private static GameData? ReadFile(string filePath)
+        /// <summary>
+        /// Parses the json file into a class containing the game data
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        private static GameData? ReadFile(string filePath)
         {
             JObject? jsonObject = null;
             const int maxRetries = 5;
@@ -246,7 +247,7 @@ namespace BrawlStreamStatsHelper
         {
             try
             {
-                
+                // Attempt to write files for game data
                 try
                 {
                     var rootPath = Path.Combine(_userProfilePath, "BrawlStreamGameData/GameData");
@@ -259,13 +260,14 @@ namespace BrawlStreamStatsHelper
                     WriteGameLevelInfo(gameData, rootPath);
                     Console.WriteLine("Updated Data");
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Console.WriteLine("Failed to update Game Data:");
                     throw new Exception(ex.Message);
 
                 }
 
+                // Attempt to draw and save tables
                 try
                 {
                     var tableGenerator = new TableGenerator(gameData, _userProfilePath + "/BrawlStreamGameData/", _config);
@@ -281,7 +283,7 @@ namespace BrawlStreamStatsHelper
             }
             catch (Exception ex)
             {
-                
+
                 Console.WriteLine(ex.Message);
                 Console.WriteLine();
             }
@@ -296,7 +298,7 @@ namespace BrawlStreamStatsHelper
         private static void WriteGameLevelInfo(GameData gameData, string rootPath)
         {
 
-
+            // Custom variables for brawlball and team level stats
             double brawlballTotalTimeHeld = 0;
             var teamBallTimeHeld = new double[2];
             var teamAttacksUsed = new double[2];
@@ -304,6 +306,7 @@ namespace BrawlStreamStatsHelper
 
             if (_config.SortFilesByTeam)
             {
+                // Split teams out
                 Dictionary<string, List<Player>> playersByTeam = new();
                 Dictionary<string, int> playerCounter = new();
                 foreach (var player in gameData.Players)
@@ -318,6 +321,7 @@ namespace BrawlStreamStatsHelper
                     player.PlayerNumber = "Player" + playerCounter["Team" + player.TeamNum];
                 }
 
+                // Calculate and populate player and weapon level stats for each team
                 foreach (var team in playersByTeam)
                 {
                     foreach (var player in team.Value)
@@ -335,6 +339,7 @@ namespace BrawlStreamStatsHelper
             }
             else
             {
+                // Calculate and populate player and weapon level stats for each player
                 foreach (var player in gameData.Players)
                 {
                     var playerDirectory = Path.Combine(rootPath, player.PlayerNumber);
@@ -348,11 +353,10 @@ namespace BrawlStreamStatsHelper
             }
 
 
-
+            // Populate and save game level stats
             gameData.BallTotalTimeHeld = brawlballTotalTimeHeld;
-
             gameData.Team1BallPossession = CalculateAndFormatPercentage(teamBallTimeHeld[0], brawlballTotalTimeHeld);
-            gameData.Team2BallPossession = CalculateAndFormatPercentage(teamBallTimeHeld[1], brawlballTotalTimeHeld);            
+            gameData.Team2BallPossession = CalculateAndFormatPercentage(teamBallTimeHeld[1], brawlballTotalTimeHeld);
             gameData.Team1Accuracy = CalculateAndFormatPercentage(teamAttacksHit[0], teamAttacksUsed[0]);
             gameData.Team2Accuracy = CalculateAndFormatPercentage(teamAttacksHit[1], teamAttacksUsed[1]);
             if (gameData is { Team1BallPossession: "N/A", Team2BallPossession: "N/A" })
@@ -370,8 +374,8 @@ namespace BrawlStreamStatsHelper
         /// <param name="player"></param>
         /// <param name="brawlballTotalTimeHeld"></param>
         /// <param name="teamBallTimeHeld"></param>
+        /// <param name="teamAttacksHit"></param>
         /// <param name="teamAttacksUsed"></param>
-        /// <param name="teamAttaksHit"></param>
         private static void WriteWeaponLevelInfo(string playerDirectory, Player player, ref double brawlballTotalTimeHeld,
             ref double[] teamBallTimeHeld,
             ref double[] teamAttacksHit,
@@ -379,30 +383,27 @@ namespace BrawlStreamStatsHelper
         {
             var weaponDirectory = Path.Combine(playerDirectory, "WeaponStats");
             Directory.CreateDirectory(weaponDirectory);
-            List<WeaponData> weaponDataList = new List<WeaponData>();
+            var weaponDataList = new List<WeaponData>();
             var weaponIndex = 0;
             foreach (var key in player.Weapons.Keys)
             {
                 var weaponText = "Wep" + weaponIndex;
-                if (key == "BrawlballNoHit")
+                switch (key)
                 {
-                    brawlballTotalTimeHeld += player.Weapons[key].TimeHeld;
-                    teamBallTimeHeld[player.TeamNum - 1] += player.Weapons[key].TimeHeld;
+                    case "BrawlballNoHit":
+                        brawlballTotalTimeHeld += player.Weapons[key].TimeHeld;
+                        teamBallTimeHeld[player.TeamNum - 1] += player.Weapons[key].TimeHeld;
 
-                    player.BrawlballThrown = player.Weapons[key].Throw.Uses;
-                    player.BrawlballTimeHeld = player.Weapons[key].TimeHeld;
-                    continue;
+                        player.BrawlballThrown = player.Weapons[key].Throw.Uses;
+                        player.BrawlballTimeHeld = player.Weapons[key].TimeHeld;
+                        continue;
+                    case "Unarmed":
+                        weaponText = "Unarmed";
+                        break;
+                    default:
+                        weaponIndex++;
+                        break;
                 }
-
-                if (key == "Unarmed")
-                {
-                    weaponText = "Unarmed";
-                }
-                else
-                {
-                    weaponIndex++;
-                }
-
 
                 var weaponSubDirectory = Path.Combine(weaponDirectory, weaponText);
                 Directory.CreateDirectory(weaponSubDirectory);
@@ -413,9 +414,9 @@ namespace BrawlStreamStatsHelper
                     ref teamAttacksHit);
                 WriteClass(weaponData, weaponSubDirectory);
                 weaponDataList.Add(weaponData);
-                
-            }
 
+            }
+            // Populate weapon data and save to file
             var totalWeaponData = new WeaponData
             {
                 WeaponName = string.Empty,
@@ -433,6 +434,7 @@ namespace BrawlStreamStatsHelper
                 LightAccuracy = string.Empty
             };
 
+           
             foreach (var weapon in weaponDataList)
             {
                 totalWeaponData.HeavyDamageDealt += weapon.HeavyDamageDealt;
@@ -444,7 +446,6 @@ namespace BrawlStreamStatsHelper
                 totalWeaponData.LightUses += weapon.LightUses;
                 totalWeaponData.TimeHeld += weapon.TimeHeld;
                 totalWeaponData.TimesThrown += weapon.TimesThrown;
-
             }
 
             totalWeaponData.Accuracy = CalculateAndFormatPercentage(totalWeaponData.LightHits + totalWeaponData.HeavyHits, totalWeaponData.LightUses + totalWeaponData.HeavyUses);
@@ -457,12 +458,13 @@ namespace BrawlStreamStatsHelper
         }
 
 
-
         /// <summary>
         /// Handles calculating game info at a weapon specific level
         /// </summary>
         /// <param name="player"></param>
         /// <param name="key"></param>
+        /// <param name="teamAttacksUsed"></param>
+        /// <param name="teamAttacksHit"></param>
         /// <returns></returns>
         private static WeaponData GetWeaponData(Player player, string key,
             ref double[] teamAttacksUsed,
@@ -474,6 +476,7 @@ namespace BrawlStreamStatsHelper
                 TimesThrown = player.Weapons[key].Throw.Uses,
                 TimeHeld = player.Weapons[key].TimeHeld
             };
+
             foreach (var property in player.Weapons[key].GetType().GetProperties())
             {
                 if (property.PropertyType.IsSubclassOf(typeof(Attack)) || property.PropertyType == typeof(Attack))
@@ -485,7 +488,6 @@ namespace BrawlStreamStatsHelper
                         teamAttacksUsed[player.TeamNum - 1] += attack.Uses;
                         teamAttacksHit[player.TeamNum - 1] += attack.EnemyHits;
                     }
-
                 }
 
                 if (property.PropertyType == typeof(HeavyAttack))
@@ -509,6 +511,12 @@ namespace BrawlStreamStatsHelper
             return data;
         }
 
+        /// <summary>
+        /// Calculates and formats percentage splits between two values
+        /// </summary>
+        /// <param name="paramA"></param>
+        /// <param name="paramB"></param>
+        /// <returns></returns>
         private static string CalculateAndFormatPercentage(double paramA, double paramB)
         {
             if (paramB == 0) return "N/A";
@@ -517,17 +525,25 @@ namespace BrawlStreamStatsHelper
             return accuracy + "%";
         }
 
+        /// <summary>
+        /// Adds the avatar icon to the player folder and the legend name
+        /// </summary>
+        /// <param name="player"></param>
+        /// <param name="playerDirectory"></param>
         private static void WritePlayerLevelGameInfo(Player player, string playerDirectory)
         {
-
             var legendName = player.Character.ToLower().Replace(" ", "_");
-
             var sourcePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory + "/Assets/Legends/", legendName + ".png");
             File.Copy(sourcePath, playerDirectory + "/Legend.png", overwrite: true);
 
         }
 
-        private static void WriteClass(Object data, string weaponSubDirectory)
+        /// <summary>
+        /// Writes the class to a folder
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="weaponSubDirectory"></param>
+        private static void WriteClass(object data, string weaponSubDirectory)
         {
             foreach (var property in data.GetType().GetProperties())
             {
