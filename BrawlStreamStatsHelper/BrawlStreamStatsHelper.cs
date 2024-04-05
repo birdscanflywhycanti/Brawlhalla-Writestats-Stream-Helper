@@ -408,7 +408,15 @@ namespace BrawlStreamStatsHelper
                 var weaponSubDirectory = Path.Combine(weaponDirectory, weaponText);
                 Directory.CreateDirectory(weaponSubDirectory);
                 var sourcePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory + "/Assets/Weapons/", key.ToLower() + ".png");
-                File.Copy(sourcePath, weaponSubDirectory + "/Weapon.png", overwrite: true);
+                try
+                {
+                    File.Copy(sourcePath, weaponSubDirectory + "/Weapon.png", overwrite: true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Unable to copy weapon image for " + key.ToLower());
+                }
+                
                 var weaponData = GetWeaponData(player, key,
                     ref teamAttacksUsed,
                     ref teamAttacksHit);
