@@ -414,7 +414,8 @@ namespace BrawlStreamStatsHelper
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Unable to copy weapon image for " + key.ToLower());
+                    File.Copy(@"/Assets/Weapons/NoImage.png", weaponSubDirectory + "/Weapon.png", overwrite: true);
+                    Console.WriteLine("Unable to copy weapon image for " + key.ToLower() + " - Using Blank Image");
                 }
                 
                 var weaponData = GetWeaponData(player, key,
@@ -542,7 +543,18 @@ namespace BrawlStreamStatsHelper
         {
             var legendName = player.Character.ToLower().Replace(" ", "_");
             var sourcePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory + "/Assets/Legends/", legendName + ".png");
-            File.Copy(sourcePath, playerDirectory + "/Legend.png", overwrite: true);
+
+
+            
+            try
+            {
+                File.Copy(sourcePath, playerDirectory + "/Legend.png", overwrite: true);
+            }
+            catch (Exception ex)
+            {
+                File.Copy(@"/Assets/Weapons/NoImage.png", playerDirectory + "/Legend.png", overwrite: true);
+                Console.WriteLine("Unable to copy legend image for " + legendName.ToLower() + " - Using Blank Image");
+            }
 
         }
 
