@@ -385,9 +385,35 @@ namespace BrawlStreamStatsHelper
             Directory.CreateDirectory(weaponDirectory);
             var weaponDataList = new List<WeaponData>();
             var weaponIndex = 0;
+            var gadgetIndex = 0;
+
+            var gadgets = new List<string>()
+            {
+                "SpikeBall",
+                "SpawnBotFlyby",
+                "homingboomerang",
+                "StickyBomb",
+                "bouncyBomb",
+                "sidekickSummoner",
+                "bombsketballBomb",
+                "snowball",
+                "waterBalloon",
+                "table",
+                "chair"
+
+
+            };
             foreach (var key in player.Weapons.Keys)
             {
-                var weaponText = "Wep" + weaponIndex;
+                string weaponText;
+                if (gadgets.Contains(key)){
+                    weaponText = "Gadget" + gadgetIndex;
+                }
+                else
+                {
+                    weaponText = "Wep" + weaponIndex;
+                }
+              
                 switch (key)
                 {
                     case "BrawlballNoHit":
@@ -401,7 +427,14 @@ namespace BrawlStreamStatsHelper
                         weaponText = "Unarmed";
                         break;
                     default:
-                        weaponIndex++;
+                        if (gadgets.Contains(key))
+                        {
+                            gadgetIndex++;
+                        }
+                        else
+                        {
+                            weaponIndex++;
+                        }
                         break;
                 }
 
@@ -414,7 +447,7 @@ namespace BrawlStreamStatsHelper
                 }
                 catch (Exception ex)
                 {
-                    File.Copy(@"/Assets/Weapons/NoImage.png", weaponSubDirectory + "/Weapon.png", overwrite: true);
+                    File.Copy(AppDomain.CurrentDomain.BaseDirectory + @"/Assets/Weapons/NoImage.png", weaponSubDirectory + "/Weapon.png", overwrite: true);
                     Console.WriteLine("Unable to copy weapon image for " + key.ToLower() + " - Using Blank Image");
                 }
                 
@@ -552,7 +585,7 @@ namespace BrawlStreamStatsHelper
             }
             catch (Exception ex)
             {
-                File.Copy(@"/Assets/Weapons/NoImage.png", playerDirectory + "/Legend.png", overwrite: true);
+                File.Copy(AppDomain.CurrentDomain.BaseDirectory + @"/Assets/Weapons/NoImage.png", playerDirectory + "/Legend.png", overwrite: true);
                 Console.WriteLine("Unable to copy legend image for " + legendName.ToLower() + " - Using Blank Image");
             }
 
